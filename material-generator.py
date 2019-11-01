@@ -90,15 +90,40 @@ class MaterialGenerator(QtWidgets.QDialog):
     self.reRollOverrideBtn.clicked.connect(self.reRollWireframe)
     self.toggleWireframeOnShadedBtn.clicked.connect(self.toggleWreframeOnShaded)
     self.toggleSelectionHighlightingBtn.clicked.connect(self.toggleSelectionHighlighting)
+  
+  def deleteUI(self, name):
+    if cmds.window(name, exists=True):
+      cmds.deleteUI(name)
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+  def getSelectedMeshes(self):
+    # Get list of selected meshes and return them
+    return [i for i in cmds.ls(sl=True) if cmds.ls(i, dag=1, type='mesh', ni=1)]
+  
+  def rerollHSV(self, *args):
+    selection = self.getSelectedMeshes()
+    list_of_meshes_missing_shaders = []
+    for mesh in selection:
+      # Check if shader already exists for currently selected mesh
+      if not cmds.objExists(mesh + '_rand_shdr'):
+        list_of_meshes_missing_shaders.append(mesh)
+      else:
+        h = random.uniform(0, 1)
+        s = random.uniform(0, 0.5)
+        v = random.uniform(0, 1)
+        cmds.setAttr(mesh + '_rand_shdr' + '.color', h, s, v)
+    if len(list_of_meshes_missing_shaders != 0:
+      # Some meshes do not have a random shader applied yet so call 
+      # function to apply new shaders
+        self.applyRandomShaders()
+           
+  def applyTechBlinnShader(self, *args):
+    selection = self.getSelectedMeshes()
+           if cmds.objExists('deform_tech_blinn'):
+             # Assign default tech blinn shader to mesh
+             for mesh in selection:
+               cmds.select(mesh)
+               cmds.hyperShade(assign = 'deform_tech_blinn'
+           else:
+             # Re-visit this later, create the shader if it doesn't exist
+             cmds.warning('deform_tech_blinn shader does not exist')
+    cmds.select(selection)
