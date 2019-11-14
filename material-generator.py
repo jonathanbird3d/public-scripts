@@ -177,3 +177,40 @@ class MaterialGenerator(QtWidgets.QDialog):
                 cmds.select(selection)
             else:
                 cmds.warning('lambert1 shader does not exist')
+
+        def reRollWireframe(self):
+            selection = self.getSelectedMeshes()
+            for mesh in selection:
+                if cmds.getAttr(mesh+'.overrideEnabled') == False:
+                    try:
+                        cmds.setAttr(mesh+'.overrideEnabled', True)
+                    except:
+                        print('Could not set {0}.overrideEnabled to True'.format(mesh))
+                                
+        def toggleWireframeOnShaded(self):
+            if self.wireframeOnShaded == True:
+                try:
+                    mel.eval('setWireframeOnshadedOption false modelPanel4')
+                    self.wireframeOnShaded = False
+                except:
+                    cmds.warning('Could not toggle wireframe on shaded')
+            else:
+                try:
+                    mel.eval('setWireframeOnShadedOption true modelPanel4')
+                    self.wireframeOnShaded = True
+                except:
+                    cmds.warning('Could not toggle wireframe on shaded')
+                                
+        def toggleSelectionHighlighting(self, *args):
+            if self.selectionHighlight == True:
+                try:
+                    mel.eval("modelEditor -e -sel false modelPanel4")
+                    self.selectionHighlight = False
+                except:
+                    cmds.warning('Could not toggle selection highlighting')
+            else:
+                try:
+                    mel.eval("modelEditor -e -sel true modelPanel4")
+                    self.selectionHighlight = True
+                except:
+                    cmds.warning('Could not toggle selection highlighting')
