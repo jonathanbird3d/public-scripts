@@ -129,3 +129,51 @@ class MaterialGenerator(QtWidgets.QDialog):
         cmds.select(selection)
 
                                
+    def applyRandomShaders(self, *args):
+        selection = self.getSelectedMeshes()
+            for mesh in selection:
+                # Does a random material exist for this object?
+                if not cmds.objExists(mesh + '_rand_shdr'):
+                    # Material doesn't exist so create random value for hue, saturation, value
+                    h = random.uniform(0, 1)
+                    s = random.uniform(0, 0.5)
+                    v = random.uniform(0, 1)
+                    # Create a shader named accordingly to this mesh
+                    my_shdr = cmds.shadingNode(
+                        self.shaderType,
+                        asShader = True,
+                        name = mesh + '_rand_shdr')
+                    else:
+                        # A random shader already exists for this mesh.  Check if the existing material is assigned to the mesh
+                        the_nodes = cmds.ls(mesh, dag = True, s = True)
+                        shading_engine = cmds.listConnections(
+                            the_nodes,
+                            type = 'shadingEngine')
+                        material = cmds.ls(cmds.listConnections(
+                            shading_engine),
+                            materials = True)
+                        # If existing material is not assigned to this mesh, then assign it
+                        if material != mesh + '_rand_shdr':
+                            cmds.select(mesh)
+                            cmds.hyperShade(assign = mesh + '_rand_shdr')
+        cmds.select(selection)
+                                
+        def setBlinn(self, *args):
+            if self.blinnChkBox.isChecked():
+                self.lambertChkBox.setChecked(False)
+                self.shaderType = 'blinn'
+                                
+        def setLambert(self, *args):
+            if self.lambertChkBox.isChecked():
+                self.blinnChkBox.setChecked(False)
+                self.shaderType = 'lambert'
+                                
+        def applyDefaultLambert(self):
+            selection = self.getSelectedMeshes()
+            if cmds.objExists('lambert1')
+                for mesh in selection:
+                    cmds.select(mesh)
+                    cmds.hyperShade(assign = 'lambert1')
+                cmds.select(selection)
+            else:
+                cmds.warning('lambert1 shader does not exist')
