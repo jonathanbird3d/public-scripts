@@ -1,0 +1,252 @@
+import pymel.core as pm
+import maya.OpenMaya as OpenMaya
+import maya.OpenMayaAnim as OpenMayaAnim
+import maya.cmds as cmds
+from PySide2 import QtWidgets
+from PySide2 import QtCore
+adv_But_StatN = None
+class myClusterCtrlUI():
+def init(self, *args):
+self.createWindow()
+self.myWin.setWindowTitle('cluster Control')
+self.myWin.show()
+def createWindow(self):
+self.myWin = QtWidgets.QWidget()
+self.myWin.resize(180, 100)
+self.myWin.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint) #stay on top
+self.myParentButton = QtWidgets.QPushButton(self.myWin)
+self.myParentButton.resize(100,25)
+self.myParentButton.move(60,40)
+self.myParentButton.clicked.connect(self.Add_Cl_Ctrl)
+self.myParentButton.setText("Cluster_Control")
+self.MyPrefix_Field = QtWidgets.QLineEdit("Cl_1_",self.myWin)
+self.MyPrefix_Field.resize(80,20)
+self.MyPrefix_Field.move(10,10)
+self.MyPrefix_FieldName = QtWidgets.QLabel("prefix",self.myWin)
+self.MyPrefix_FieldName.move(100,10)
+self.myAdv_ChBox = QtWidgets.QCheckBox("adv",self.myWin)
+self.myAdv_ChBox.move(10,50)
+self.myAdv_ChBox.setChecked(False)
+self.myAdv_ChBox.stateChanged.connect(lambda:self.btnstate())
+self.myInputMesh_Field = QtWidgets.QLineEdit("select input mesh",self.myWin)
+self.myInputMesh_Field.resize(135,20)
+self.myInputMesh_Field.move(10,70)
+self.get_myInputMesh_Butt = QtWidgets.QPushButton(self.myWin)
+self.get_myInputMesh_Butt.resize(20,20)
+self.get_myInputMesh_Butt.move(140,70)
+self.get_myInputMesh_Butt.clicked.connect(self.my_get_myInputMesh)
+self.get_myInputMesh_Butt.setText(">>")
+#set default mode
+self.myInputMesh_Field.setVisible(0)
+self.get_myInputMesh_Butt.setVisible(0)
+self.myWin.resize(180, 80)
+self.btnstate()
+def Add_Cl_Ctrl(self):
+self.sel = cmds.ls(sl=True)
+pm.undoInfo(openChunk=True)
+self.myShape = cmds.ls(sl=True, o=True)
+self.myCluster = inFnc_soft_cluster(self.MyPrefix_Field.text())
+pm.parent(self.myCluster,pm.ls("Clusters_Grp")[0])
+self.myControl = create_NurbsCtrl(self.myCluster)
+pm.parent(self.myControl.getParent().getParent(),pm.ls("Controls_Grp")[0])
+if not self.myAdv_ChBox.isChecked():
+self.myFoll = Foll_OnClosestPoint(self.myControl,self.myShape)
+Add_Mode_Connections(self.myControl,self.myControl.getParent(), 0)
+else:
+self.myFoll = Foll_OnClosestPoint(self.myControl,self.myInputMesh_Field.text())
+Add_Mode_Connections(self.myControl,self.myCluster, 1)
+matrix_PointConst(self.myFoll ,self.myControl.getParent().getParent())
+pm.select(self.myControl)
+#print (self.myControl + " created +++")
+pm.undoInfo(closeChunk=True)
+def btnstate(self):
+if self.myAdv_ChBox.isChecked() == True:
+self.myInputMesh_Field.setVisible(1)
+self.get_myInputMesh_Butt.setVisible(1)
+self.myWin.resize(180, 100)
+else:
+self.myInputMesh_Field.setVisible(0)
+self.get_myInputMesh_Butt.setVisible(0)
+self.myWin.resize(180, 80)
+def my_get_myInputMesh(self):
+self.getSelGeo = pm.ls(sl = True)
+self.myInputMesh_Field.setText('%s'%self.getSelGeo[0])
+print ('input mesh changed %s'%self.getSelGeo[0])
+def inFnc_soft_cluster(nm):
+sel = cmds.ls(sl=True)
+if not sel:
+cmds.warning("Select a vertex atleast.")
+return
+if "vtx" not in sel[0]:
+cmds.warning("Select only vertex components.")
+return
+pos = cmds.xform(sel[0], q=True, ws=True, t=True)
+richSelection = OpenMaya.MRichSelection()
+softSelection = OpenMaya.MGlobal.getRichSelection(richSelection)
+selectionList = OpenMaya.MSelectionList()
+richSelection.getSelection(selectionList)
+dag = OpenMaya.MDagPath()
+component = OpenMaya.MObject()
+selectionList.getDagPath(0, dag, component)
+componentIndex = OpenMaya.MFnSingleIndexedComponent(component)
+vtxArray = OpenMaya.MIntArray()
+if not component.isNull():
+it = OpenMaya.MItMeshVertex(dag, component)
+while not it.isDone():
+vtxArray.append(it.index())
+it.next()
+weightList = {}
+for i in range(vtxArray.length()):
+weight = componentIndex.weight(i)
+influence = weight.influence()
+weightList.setdefault(vtxArray[i], influence)
+vertices= []
+selectionList.getSelectionStrings(vertices)
+clsNode, clsHandle = cmds.cluster(vertices, n=nm)
+clsShape = cmds.listRelatives(clsHandle, s=True)[0]
+for weight in weightList:
+currentVertex = weight
+currentWeight = weightList[weight]
+cmds.setAttr("%s.weightList[0].w[%i]" % (clsNode, currentVertex), currentWeight)
+cmds.setAttr("%s.rotatePivot" % clsHandle, pos[0], pos[1], pos[2])
+cmds.setAttr("%s.origin" % clsShape, pos[0], pos[1], pos[2])
+if not pm.objExists("Clusters_Grp"):
+Clusters_Grp = pm.group(em= True, name ="Clusters_Grp")
+pm.setAttr(Clusters_Grp.visibility,0)
+return clsHandle
+#Add Follicle
+def Foll_OnClosestPoint(obj,Shape):
+myobjects = pm.ls(obj,Shape)
+myobj = myobjects[0]
+myShape = myobjects[1]
+myFollN = None
+if pm.objectType(myShape,isType='mesh')|pm.objectType(myShape,isType='nurbsSurface'):
+if pm.objExists(myobj+"_ClosestPoint") == False:
+if pm.objectType(myShape,isType='mesh'):
+closesPointNode = pm.createNode('closestPointOnMesh', n=(myobj+"_ClosestPoint"))
+myShape.outMesh.connect(closesPointNode.inMesh)
+if pm.objectType(myShape,isType='nurbsSurface'):
+closesPointNode = pm.createNode('closestPointOnSurface', n=(myobj+"_ClosestPoint"))
+myShape.worldSpace.connect(closesPointNode.inputSurface)
+decomposeMatrixNode = pm.createNode('decomposeMatrix', n=(myobj+"_DecomposeMatrix"))
+myobj.worldMatrix.connect(decomposeMatrixNode.inputMatrix)
+decomposeMatrixNode.outputTranslate.connect(closesPointNode.inPosition)
+MyU = pm.getAttr(closesPointNode.result.parameterU)
+MyV = pm.getAttr(closesPointNode.result.parameterV)
+oFoll = pm.createNode('follicle', name=(myobj+"_follShape"))
+if pm.objectType(myShape,isType='mesh'):
+myShape.outMesh.connect(oFoll.inputMesh)
+else:myShape.worldSpace.connect(oFoll.inputSurface)
+myShape.worldMatrix[0].connect(oFoll.inputWorldMatrix)
+oFoll.outRotate.connect(oFoll.getParent().rotate)
+oFoll.outTranslate.connect(oFoll.getParent().translate)
+oFoll.parameterU.set(MyU)
+oFoll.parameterV.set(MyV)
+oFoll.getParent().t.lock()
+oFoll.getParent().r.lock()
+myFollN = oFoll.getParent()
+myFollN.rename(myobj+"_foll")
+pm.delete(decomposeMatrixNode,closesPointNode)
+if not pm.objExists("Foll_Grp"):
+Foll_Grp = pm.group(em= True, name ="Foll_Grp")
+pm.setAttr(Foll_Grp.visibility,0)
+else: Foll_Grp = pm.ls("Foll_Grp")[0]
+pm.parent(myFollN,Foll_Grp)
+else: print "alredy Connected!"
+else: print "last select gometry with UV!"
+return myFollN
+#make nurbs sphere ctrl
+def create_NurbsCtrl(dest):
+myobjects = pm.ls(dest)
+myobj = myobjects[0]
+Controls_Grp = None
+myRadius = pm.softSelect(q = True, ssd = True)*0.1 #get Radius From Soft selection Distance
+sp_CtrlObj = pm.sphere(r=myRadius, name = dest+"_Ctrl", s = 4, nsp = 2)[0]
+alignParConstMeth(sp_CtrlObj,myobj)
+frUppGrp = addUppGrp(dest+"_Ctrl")
+SecUppGrp = addUppGrp(frUppGrp)
+'''
+myAttr = pm.listAttr(sp_CtrlObj, k=True)
+for i in range(1,len(myAttr)):
+pm.connectAttr('%s.%s'%(sp_CtrlObj,myAttr[i]),'%s.%s'%(myobj.myAttr[i]))
+'''
+pm.connectAttr(sp_CtrlObj.translateX,myobj.translateX)
+pm.connectAttr(sp_CtrlObj.translateY,myobj.translateY)
+pm.connectAttr(sp_CtrlObj.translateZ,myobj.translateZ)
+pm.connectAttr(sp_CtrlObj.rotateX,myobj.rotateX)
+pm.connectAttr(sp_CtrlObj.rotateY,myobj.rotateY)
+pm.connectAttr(sp_CtrlObj.rotateZ,myobj.rotateZ)
+pm.connectAttr(sp_CtrlObj.scaleX,myobj.scaleX)
+pm.connectAttr(sp_CtrlObj.scaleY,myobj.scaleY)
+pm.connectAttr(sp_CtrlObj.scaleZ,myobj.scaleZ)
+if not pm.objExists("Controls_Grp"):
+Controls_Grp = pm.group(em= True, name ="Controls_Grp")
+return sp_CtrlObj
+def Add_Mode_Connections(src,trg, mode):
+sorce = pm.PyNode(src)
+target = pm.PyNode(trg)
+if mode == 0 :
+revMult = pm.createNode( 'multiplyDivide', n= '%s_revMult' %sorce,skipSelect =True)
+pm.setAttr(revMult.input2,-1,-1,-1)
+sorce.translate.connect(revMult.input1)
+revMult.output.connect(trg.translate)
+print "standart mode"
+elif mode == 1:
+print "adv mode before"
+if not pm.objExists('%s_decompMatrix' %sorce):
+my_decomposeMatrixNode = pm.createNode('decomposeMatrix',n='%s_decompMatrix' %sorce, skipSelect =True)
+my_subtractLocalTr = pm.createNode('plusMinusAverage',n='%s_subtractLocalTr' %sorce, skipSelect =True)
+pm.setAttr(my_subtractLocalTr.operation,2)
+my_decomposeMatrixNode.outputTranslate.connect(my_subtractLocalTr.input3D[0])
+sorce.translate.connect(my_subtractLocalTr.input3D[1])
+sorce.worldMatrix.connect(my_decomposeMatrixNode.inputMatrix)
+my_subtractLocalTr.output3D.connect(target.rotatePivot)
+my_subtractLocalTr.output3D.connect(target.scalePivot)
+#my_decomposeMatrixNode.outputTranslate.connect(target.getShape().origin)
+print "adv mode after"
+#AddUpp Group
+def addUppGrp(curObj):
+if pm.objExists(curObj + "_Grp") == False:
+myGrp = pm.group(em = True,name = curObj + "_Grp")
+my_Align_Long(myGrp,curObj,0)
+pm.parent(curObj, myGrp)
+#print "group Added! ++++"
+else: print "group alredy exist! +++++"
+return myGrp
+#align parentConstraint method
+def alignParConstMeth(obj,targ):
+pm.delete(pm.parentConstraint(targ,obj))
+#align func type= 0 "tr rt sc", type = 1 "tr" .............
+def my_Align_Long(srce,target, type):
+pm.undoInfo(openChunk=True)
+xFormPos = pm.xform(target, q=True, ws=True, t=True)
+xFormRotOrder = pm.xform(target, q=True, roo=True)
+xFormRot = pm.xform(target, q=True,ws=True, ro=True)
+xFormScale = pm.xform(target, q=True, ws=True, s=True)
+if type == 0:
+pm.xform(srce,ws=True, t=(xFormPos[0],xFormPos[1],xFormPos[2]))
+pm.xform(srce,roo= xFormRotOrder)
+pm.xform(srce,ws=True, ro=(xFormRot[0],xFormRot[1],xFormRot[2]))
+pm.xform(srce,ws=True, s=(xFormScale[0],xFormScale[1],xFormScale[2]))
+if type == 1:
+pm.xform(srce,ws=True, t=(xFormPos[0],xFormPos[1],xFormPos[2]))
+if type == 2:
+pm.xform(srce,roo= xFormRotOrder)
+pm.xform(srce,ws=True, ro=(xFormRot[0],xFormRot[1],xFormRot[2]))
+if type == 3:
+pm.xform(srce,ws=True, s=(xFormScale[0],xFormScale[1],xFormScale[2]))
+pm.undoInfo(closeChunk=True)
+matrix pointConstraint
+
+def matrix_PointConst(driver,target):
+myobjects = pm.ls(driver,target)
+mainMultMatrix = pm.createNode( 'multMatrix', n= myobjects[0]+ '_' + myobjects[1] + 'multMtrx')
+maindecomposeMatrix = pm.createNode( 'decomposeMatrix', n = myobjects[0]+ '' + myobjects[1]+ '_decompMtrx')
+pm.connectAttr(myobjects[0].worldMatrix[0],mainMultMatrix.matrixIn[0])
+pm.connectAttr(myobjects[1].parentInverseMatrix[0],mainMultMatrix.matrixIn[1])
+pm.connectAttr(mainMultMatrix.matrixSum,maindecomposeMatrix.inputMatrix)
+pm.connectAttr(maindecomposeMatrix.outputTranslateX,myobjects[1].translateX)
+pm.connectAttr(maindecomposeMatrix.outputTranslateY,myobjects[1].translateY)
+pm.connectAttr(maindecomposeMatrix.outputTranslateZ,myobjects[1].translateZ)
+return maindecomposeMatrix
+tesAddCluster = myClusterCtrlUI()
