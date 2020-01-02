@@ -1,5 +1,5 @@
 # Getting Qt Modules
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt4 import QtCore, QtGui, QtWidgets
 # Getting Maya UI
 from maya import OpenMayaUI
 # Getting wrapInstance
