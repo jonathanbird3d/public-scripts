@@ -1,5 +1,5 @@
 # Getting Qt Modules
-from Qt import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 # Getting Maya UI
 from maya import OpenMayaUI
 # Getting wrapInstance
@@ -18,14 +18,14 @@ class MaterialGenerator(QtWidgets.QDialog):
         self.__init_ui__()
         self.__init_signal__()
 
-    # Set some useful variables
-    self.shaderType = 'lambert'
-    self.wireframeOnShaded = False
-    self.selectionHighlight = False
+        # Set some useful variables
+        self.shaderType = 'lambert'
+        self.wireframeOnShaded = False
+        self.selectionHighlight = False
 
-    # Need to define a maximum number of shaders allowed
-    # If more than the maximum is needed, then we need to recycle old
-    # shaders instead of creating millions of new ones
+        # Need to define a maximum number of shaders allowed
+        # If more than the maximum is needed, then we need to recycle old
+        # shaders instead of creating millions of new ones
 
     def __init_ui__(self):
         # Define some stuff for the window
@@ -50,7 +50,7 @@ class MaterialGenerator(QtWidgets.QDialog):
         # Define some buttons
         self.reRollBtn = QtWidgets.QPushButton("Re-roll Material Color")
         self.genShadersBtn = QtWidgets.QPushButton("Apply Random Shader")
-        self.defShadersBtn = QtWidgets.QPushButton("Apply Tech Blinn Shader")
+        # self.defShadersBtn = QtWidgets.QPushButton("Apply Tech Blinn Shader")
         self.defLambertBtn = QtWidgets.QPushButton("Apply Default lambert1 Shader")
         self.reRollOverrideBtn = QtWidgets.QPushButton("Re-roll Wireframe Color")
         self.toggleWireFrameOnShadedBtn = QtWidgets.QPushButton("Toggle Wireframe on Shaded")
@@ -64,7 +64,7 @@ class MaterialGenerator(QtWidgets.QDialog):
         self.main_layout.addWidget(self.genShadersBtn)
         self.main_layout.addWidget(self.reRollBtn)
         self.main_layout.addWidget(self.spacerFrame)
-        self.main_layout.addWidget(self.defShadersBtn)
+        # self.main_layout.addWidget(self.defShadersBtn)
         self.main_layout.addWidget(self.defLambertBtn)
         self.main_layout.addWidget(self.spacerFrame)
         self.main_layout.addWidget(self.toggleWireframeOnShadedBtn)
@@ -83,7 +83,7 @@ class MaterialGenerator(QtWidgets.QDialog):
         # Connect some UI actions to some functions
         self.reRollBtn.clicked.connect(self.rerollHSV)
         self.genShadersBtn.clicked.connect(self.applyRandomShaders)
-        self.defShadersBtn.clicked.connect(self.applyTechBlinnShader)
+        # self.defShadersBtn.clicked.connect(self.applyTechBlinnShader)
         self.blinnChkBox.toggled.connect(self.setBlinn)
         self.lambertChkBox.toggled.connect(self.setLambert)
         self.defLambertBtn.clicked.connect(self.applyDefaultLambert)
@@ -98,7 +98,7 @@ class MaterialGenerator(QtWidgets.QDialog):
     def getSelectedMeshes(self):
         # Get list of selected meshes and return them
         return [i for i in cmds.ls(sl=True) if cmds.ls(i, dag=1, type='mesh', ni=1)]
-  
+
     def rerollHSV(self, *args):
         selection = self.getSelectedMeshes()
         list_of_meshes_missing_shaders = []
@@ -111,24 +111,11 @@ class MaterialGenerator(QtWidgets.QDialog):
                 s = random.uniform(0, 0.5)
                 v = random.uniform(0, 1)
                 cmds.setAttr(mesh + '_rand_shdr' + '.color', h, s, v)
-        if len(list_of_meshes_missing_shaders != 0:
+        if len(list_of_meshes_missing_shaders != 0):
             # Some meshes do not have a random shader applied yet so call 
             # function to apply new shaders
             self.applyRandomShaders()
-           
-    def applyTechBlinnShader(self, *args):
-        selection = self.getSelectedMeshes()
-        if cmds.objExists('deform_tech_blinn'):
-            # Assign default tech blinn shader to mesh
-            for mesh in selection:
-                cmds.select(mesh)
-                cmds.hyperShade(assign = 'deform_tech_blinn'
-        else:
-            # Re-visit this later, create the shader if it doesn't exist
-            cmds.warning('deform_tech_blinn shader does not exist')
-        cmds.select(selection)
 
-                               
     def applyRandomShaders(self, *args):
         selection = self.getSelectedMeshes()
             for mesh in selection:
@@ -157,60 +144,60 @@ class MaterialGenerator(QtWidgets.QDialog):
                             cmds.select(mesh)
                             cmds.hyperShade(assign = mesh + '_rand_shdr')
         cmds.select(selection)
-                                
-        def setBlinn(self, *args):
-            if self.blinnChkBox.isChecked():
-                self.lambertChkBox.setChecked(False)
-                self.shaderType = 'blinn'
-                                
-        def setLambert(self, *args):
-            if self.lambertChkBox.isChecked():
-                self.blinnChkBox.setChecked(False)
-                self.shaderType = 'lambert'
-                                
-        def applyDefaultLambert(self):
-            selection = self.getSelectedMeshes()
-            if cmds.objExists('lambert1')
-                for mesh in selection:
-                    cmds.select(mesh)
-                    cmds.hyperShade(assign = 'lambert1')
-                cmds.select(selection)
-            else:
-                cmds.warning('lambert1 shader does not exist')
 
-        def reRollWireframe(self):
-            selection = self.getSelectedMeshes()
+    def setBlinn(self, *args):
+        if self.blinnChkBox.isChecked():
+            self.lambertChkBox.setChecked(False)
+            self.shaderType = 'blinn'
+                            
+    def setLambert(self, *args):
+        if self.lambertChkBox.isChecked():
+            self.blinnChkBox.setChecked(False)
+            self.shaderType = 'lambert'
+
+    def applyDefaultLambert(self):
+        selection = self.getSelectedMeshes()
+        if cmds.objExists('lambert1')
             for mesh in selection:
-                if cmds.getAttr(mesh+'.overrideEnabled') == False:
-                    try:
-                        cmds.setAttr(mesh+'.overrideEnabled', True)
-                    except:
-                        print('Could not set {0}.overrideEnabled to True'.format(mesh))
-                                
-        def toggleWireframeOnShaded(self):
-            if self.wireframeOnShaded == True:
+                cmds.select(mesh)
+                cmds.hyperShade(assign = 'lambert1')
+            cmds.select(selection)
+        else:
+            cmds.warning('lambert1 shader does not exist')
+
+    def reRollWireframe(self):
+        selection = self.getSelectedMeshes()
+        for mesh in selection:
+            if cmds.getAttr(mesh+'.overrideEnabled') == False:
                 try:
-                    mel.eval('setWireframeOnshadedOption false modelPanel4')
-                    self.wireframeOnShaded = False
+                    cmds.setAttr(mesh+'.overrideEnabled', True)
                 except:
-                    cmds.warning('Could not toggle wireframe on shaded')
-            else:
-                try:
-                    mel.eval('setWireframeOnShadedOption true modelPanel4')
-                    self.wireframeOnShaded = True
-                except:
-                    cmds.warning('Could not toggle wireframe on shaded')
-                                
-        def toggleSelectionHighlighting(self, *args):
-            if self.selectionHighlight == True:
-                try:
-                    mel.eval("modelEditor -e -sel false modelPanel4")
-                    self.selectionHighlight = False
-                except:
-                    cmds.warning('Could not toggle selection highlighting')
-            else:
-                try:
-                    mel.eval("modelEditor -e -sel true modelPanel4")
-                    self.selectionHighlight = True
-                except:
-                    cmds.warning('Could not toggle selection highlighting')
+                    print('Could not set {0}.overrideEnabled to True'.format(mesh))
+
+    def toggleWireframeOnShaded(self):
+        if self.wireframeOnShaded == True:
+            try:
+                mel.eval('setWireframeOnshadedOption false modelPanel4')
+                self.wireframeOnShaded = False
+            except:
+                cmds.warning('Could not toggle wireframe on shaded')
+        else:
+            try:
+                mel.eval('setWireframeOnShadedOption true modelPanel4')
+                self.wireframeOnShaded = True
+            except:
+                cmds.warning('Could not toggle wireframe on shaded')
+
+    def toggleSelectionHighlighting(self, *args):
+        if self.selectionHighlight == True:
+            try:
+                mel.eval("modelEditor -e -sel false modelPanel4")
+                self.selectionHighlight = False
+            except:
+                cmds.warning('Could not toggle selection highlighting')
+        else:
+            try:
+                mel.eval("modelEditor -e -sel true modelPanel4")
+                self.selectionHighlight = True
+            except:
+                cmds.warning('Could not toggle selection highlighting')
