@@ -97,7 +97,7 @@ class MaterialGenerator(QtWidgets.QDialog):
 
     def getSelectedMeshes(self):
         # Get list of selected meshes and return them
-        return [i for i in cmds.ls(sl=True) if cmds.ls(i, dag=1, type='mesh', ni=1)]
+        return [i for i in cmds.ls(selection=True) if cmds.ls(i, dagObjects=True, type='mesh', noIntermediate=True)]
 
     def rerollHSV(self, *args):
         selection = self.getSelectedMeshes()
@@ -130,19 +130,20 @@ class MaterialGenerator(QtWidgets.QDialog):
                         self.shaderType,
                         asShader = True,
                         name = mesh + '_rand_shdr')
-                    else:
-                        # A random shader already exists for this mesh.  Check if the existing material is assigned to the mesh
-                        the_nodes = cmds.ls(mesh, dag = True, s = True)
-                        shading_engine = cmds.listConnections(
-                            the_nodes,
-                            type = 'shadingEngine')
-                        material = cmds.ls(cmds.listConnections(
-                            shading_engine),
-                            materials = True)
-                        # If existing material is not assigned to this mesh, then assign it
-                        if material != mesh + '_rand_shdr':
-                            cmds.select(mesh)
-                            cmds.hyperShade(assign = mesh + '_rand_shdr')
+                else:
+                    # A random shader already exists for this mesh.
+                    # Check if the existing material is assigned to the mesh
+                    the_nodes = cmds.ls(mesh, dag = True, s = True)
+                    shading_engine = cmds.listConnections(
+                        the_nodes,
+                        type = 'shadingEngine')
+                    material = cmds.ls(cmds.listConnections(
+                        shading_engine),
+                        materials = True)
+                    # If existing material is not assigned to this mesh, then assign it
+                    if material != mesh + '_rand_shdr':
+                        cmds.select(mesh)
+                        cmds.hyperShade(assign = mesh + '_rand_shdr')
         cmds.select(selection)
 
     def setBlinn(self, *args):
