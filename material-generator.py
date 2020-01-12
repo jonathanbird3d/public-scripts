@@ -61,7 +61,6 @@ class MaterialGenerator(QtWidgets.QDialog):
         # Define some buttons
         self.reRollBtn = QtWidgets.QPushButton("Re-roll Material Color")
         self.genShadersBtn = QtWidgets.QPushButton("Apply Random Shader")
-        # self.defShadersBtn = QtWidgets.QPushButton("Apply Tech Blinn Shader")
         self.defLambertBtn = QtWidgets.QPushButton("Apply Default lambert1 Shader")
         self.reRollOverrideBtn = QtWidgets.QPushButton("Re-roll Wireframe Color")
         self.toggleWireFrameOnShadedBtn = QtWidgets.QPushButton("Toggle Wireframe on Shaded")
@@ -75,7 +74,6 @@ class MaterialGenerator(QtWidgets.QDialog):
         self.main_layout.addWidget(self.genShadersBtn)
         self.main_layout.addWidget(self.reRollBtn)
         self.main_layout.addWidget(self.spacerFrame)
-        # self.main_layout.addWidget(self.defShadersBtn)
         self.main_layout.addWidget(self.defLambertBtn)
         self.main_layout.addWidget(self.spacerFrame)
         self.main_layout.addWidget(self.toggleWireframeOnShadedBtn)
@@ -94,7 +92,6 @@ class MaterialGenerator(QtWidgets.QDialog):
         # Connect some UI actions to some functions
         self.reRollBtn.clicked.connect(self.rerollHSV)
         self.genShadersBtn.clicked.connect(self.applyRandomShaders)
-        # self.defShadersBtn.clicked.connect(self.applyTechBlinnShader)
         self.blinnChkBox.toggled.connect(self.setBlinn)
         self.lambertChkBox.toggled.connect(self.setLambert)
         self.defLambertBtn.clicked.connect(self.applyDefaultLambert)
@@ -142,9 +139,11 @@ class MaterialGenerator(QtWidgets.QDialog):
                         asShader = True,
                         name = mesh + '_rand_shdr')
                     cmds.setAttr(my_shdr + '.color', h, s, v)
+                    cmds.select(mesh)
+                    cmds.hyperShade(assign = mesh + '_rand_shdr')
                 else:
                     # A random shader already exists for this mesh.
-                    # Check if the existing material is assigned to the mesh
+                    # Check if the existing shader is assigned to the mesh
                     the_nodes = cmds.ls(mesh, dagObjects = True, shapes = True)
                     shading_engine = cmds.listConnections(
                         the_nodes,
