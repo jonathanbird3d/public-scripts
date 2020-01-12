@@ -169,7 +169,7 @@ class MaterialGenerator(QtWidgets.QDialog):
 
     def applyDefaultLambert(self):
         selection = self.getSelectedMeshes()
-        if cmds.objExists('lambert1')
+        if cmds.objExists('lambert1'):
             for mesh in selection:
                 cmds.select(mesh)
                 cmds.hyperShade(assign = 'lambert1')
