@@ -133,7 +133,7 @@ class MaterialGenerator(QtWidgets.QDialog):
                 else:
                     # A random shader already exists for this mesh.
                     # Check if the existing material is assigned to the mesh
-                    the_nodes = cmds.ls(mesh, dag = True, s = True)
+                    the_nodes = cmds.ls(mesh, dagObjects = True, shapes = True)
                     shading_engine = cmds.listConnections(
                         the_nodes,
                         type = 'shadingEngine')
