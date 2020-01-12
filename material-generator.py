@@ -141,6 +141,7 @@ class MaterialGenerator(QtWidgets.QDialog):
                         self.shaderType,
                         asShader = True,
                         name = mesh + '_rand_shdr')
+                    cmds.setAttr(my_shdr + '.color', h, s, v)
                 else:
                     # A random shader already exists for this mesh.
                     # Check if the existing material is assigned to the mesh
