@@ -24,7 +24,7 @@ class TempTracker(object):
         if isinstance(new_temp, (int, long)):
             self.temps.append(new_temp)
         else:
-            print('Expected int but got {0}'.format(type(new_temp)))
+            raise TypeError('Expected int but got {0}'.format(type(new_temp)))
 
     def get_max(self):
         """Return highest recorded temperature as int"""
