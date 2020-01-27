@@ -22,7 +22,14 @@ class TempTracker(object):
     def insert(self, new_temp):
         """Add new temperature as int"""
         if isinstance(new_temp, (int, long)):
-            self.temps.append(new_temp)
+            if new_temp >= self.temp_range[0] and new_temp <= self.temp_range[1]: 
+                self.temps.append(new_temp)
+            else:
+                raise ValueError(
+                    'Temperature {0} outside range of {1} to {2}'.format(
+                        new_temp,
+                        self.temp_range[0],
+                        self.temp_range[1]))
         else:
             raise TypeError('Expected int but got {0}'.format(type(new_temp)))
 
