@@ -21,21 +21,21 @@ class TempTracker(object):
         self.temp_range = temp_range
 
     def insert(self, new_temp):
-        """Add new temperature"""
+        """Add new temperature as int"""
         if isinstance(new_temp, (int, long)):
-            self.temps.append(int(new_temp))
+            self.temps.append(new_temp)
         else:
             print('Expected int but got {0}'.format(type(new_temp)))
 
     def get_max(self):
-        """Return highest recorded temperature"""
+        """Return highest recorded temperature as int"""
         if len(self.temps) > 0:
             return max(self.temps)
         else:
             return None
 
     def get_min(self):
-        """Return lowest recorded temperature"""
+        """Return lowest recorded temperature as int"""
         if len(self.temps) > 0:
             return min(self.temps)
         else:
@@ -45,11 +45,14 @@ class TempTracker(object):
         """Return average temperature as float"""
         total_temp = 0
         recordings = 0
-        for temp in self.temps:
-            if isinstance(temp, (int, long)):
-                recordings += 1
-                total_temp += temp
-                mean = operator.truediv(total_temp, recordings)
-            else:
-                raise TypeError('Found entry of type {0}'.format(type(temp)))
+        if self.temps > 0:
+            for temp in self.temps:
+                if isinstance(temp, (int, long)):
+                    recordings += 1
+                    total_temp += temp
+                else:
+                    raise TypeError('Found entry of type {0} {1}'.format(type(temp), temp))
+        else:
+            return None
+        mean = operator.truediv(total_temp, recordings)
         return mean
